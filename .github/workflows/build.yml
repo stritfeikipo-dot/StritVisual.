@@ -28,8 +28,25 @@ jobs:
       - name: Build mod
         run: gradle build --no-daemon
 
+      - name: Find generated JAR
+        run: |
+          echo "Checking build/libs"
+          if [ -d build/libs ]; then
+            find build/libs -maxdepth 1 -type f -name "*.jar" -print
+          else
+            echo "ERROR: build/libs directory does not exist"
+            exit 1
+          fi
+          if ! find build/libs -maxdepth 1 -type f -name "*.jar" | grep -q .; then
+            echo "ERROR: No JAR files were generated"
+            exit 1
+          fi
+
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
           name: StritVisual
           path: build/libs/*.jar
+          if-no-files-found: error
+          retention-days: 7
+          

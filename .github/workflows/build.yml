@@ -25,28 +25,33 @@ jobs:
         with:
           gradle-version: '8.14'
 
+      - name: Check project files
+        run: |
+          echo "Project root:"
+          ls -la
+          echo "Gradle files:"
+          find . -maxdepth 3 -type f \( -name "build.gradle" -o -name "build.gradle.kts" -o -name "settings.gradle" -o -name "settings.gradle.kts" \) -print
+
       - name: Build mod
-        run: gradle build --no-daemon
+        run: gradle build --no-daemon --stacktrace
 
       - name: Find generated JAR
+        if: always()
         run: |
-          echo "Checking build/libs"
-          if [ -d build/libs ]; then
-            find build/libs -maxdepth 1 -type f -name "*.jar" -print
-          else
-            echo "ERROR: build/libs directory does not exist"
-            exit 1
-          fi
-          if ! find build/libs -maxdepth 1 -type f -name "*.jar" | grep -q .; then
-            echo "ERROR: No JAR files were generated"
-            exit 1
-          fi
+          echo "Searching for JAR files:"
+          find . -type f -name "*.jar" -not -path "./.gradle/*" -print || true
+          echo "Build directories:"
+          find . -type d -name build -print || true
+          echo "Gradle tasks:"
+          gradle tasks --all --no-daemon || true
 
       - name: Upload JAR
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: StritVisual
-          path: build/libs/*.jar
+          path: |
+            **/build/libs/*.jar
           if-no-files-found: error
           retention-days: 7
           
